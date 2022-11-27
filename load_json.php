@@ -31,7 +31,7 @@ include_once( "jsondb.php" );
 $dbfile       = "json.db";
 $tablename    = "jtable";
 //$output        = [];
-$verbose    = true;
+//$verbose    = true;
 //$debug      = true;
 if( $debug ?? false ) $verbose    = true;
 //$breadcrumbdelimiter  = '§';
