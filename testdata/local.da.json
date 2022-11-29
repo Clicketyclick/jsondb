@@ -1,0 +1,18 @@
+{
+"display":
+    {
+    "footer":
+        {
+        "title": "Sidefod"
+        },
+    "header":
+        {
+        "title": "Sidehoved"
+        },
+    "main":
+        {
+        "button": "Knap",
+        "title": "Hoved"
+        }
+    }
+}

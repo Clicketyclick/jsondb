@@ -1,0 +1,19 @@
+{
+"display":
+    {
+    "footer":
+        {
+        "title": "Footer"
+        },
+    "header":
+        {
+        "button": "Button",
+        "title": "Header"
+        },
+    "main":
+        {
+        "button": "Button",
+        "title": "Main"
+        }
+    }
+}
