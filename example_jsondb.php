@@ -1,22 +1,15 @@
 <?php
 print "Example for jsondb.php\n";
+/*
+$dbfile       = "json.db";              // Alternate database name
+$tablename    = "jtable";               // Alternate table name
+*/
 include_once( "jsondb.php" );           // Rutines to read / write JSON and mixed data to SQL database
 include_once( "handleSqlite.php" );     // SQLite i/o rutines
-$dbfile       = "json.db";              // Database name
-$tablename    = "jtable";               // Table name
 
-$sql_create_table =                     // Table structure
-    "CREATE TABLE IF NOT EXISTS $tablename 
-    (
-        section     text,
-        language    text,
-        key         text NOT NULL,
-        value       text,
-        PRIMARY KEY ( section, language, key )
-    );";
 
 $db = openSqlDb( $dbfile );             // Open/create dabase
-executeSql( $db, $sql_create_table );   // Create table (if not found)
+executeSql( $db, $jsondb_sql['create_table'] );   // Create table (if not found)
 
 $mixed = [                              // Array to store
     "display" => [
