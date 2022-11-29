@@ -31,12 +31,11 @@ include_once( "jsondb.php" );
 $dbfile       = "json.db";
 $tablename    = "jtable";
 //$output        = [];
-//$verbose    = true;
+$verbose    = true;
 //$debug      = true;
 if( $debug ?? false ) $verbose    = true;
 //$breadcrumbdelimiter  = '§';
 //$breadcrumbdelimiter  = '|';
-define( "BREADCRUMBDELIMITER", ':' );
 //$breadcrumbdelimiter  = ':';
 
 if( $debug ?? false ) printf( "JSON_DECODE_FLAGS=[%s], JSON_ENCODE_FLAGS=[%s]\n", JSON_DECODE_FLAGS, JSON_ENCODE_FLAGS );
@@ -133,7 +132,7 @@ function testJsonFile( $db, $tablename, $file, $language = 'xx' )
 {
     //global $breadcrumbdelimiter;
     print "// $file\n";
-    $local   = loadJson( "$file.json" );
+    $local   = loadJson( "testdata/$file.json" );
     writeToDatabase( $db, $local, $tablename, $file, $language );
     $index   = readMixFromDatabase( $db, $tablename, BREADCRUMBDELIMITER, "section = '$file' AND language = '$language'" );
     file_put_contents( "$file.1", var_export( $local, true ) );
