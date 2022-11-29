@@ -5,14 +5,13 @@
  *   
  *  @details   Converting mixed data to and from breadcrumb lists
  *  
- *  
- *   
  *  @copyright http://www.gnu.org/licenses/lgpl.txt LGPL version 3
  *  @author    Erik Bachmann <ErikBachmann@ClicketyClick.dk>
  *  @since     2022-11-25T13:58:39 / Erik Bachmann
- *  @version   2022-11-25T13:58:39 / Erik Bachmann
+ *  @version   2022-11-29T09:13:17 / Erik Bachmann
  */
 
+// Flags for decoding JSON
 define("JSON_DECODE_FLAGS", JSON_OBJECT_AS_ARRAY 
 |   JSON_BIGINT_AS_STRING
 |	JSON_NUMERIC_CHECK
@@ -20,26 +19,44 @@ define("JSON_DECODE_FLAGS", JSON_OBJECT_AS_ARRAY
 |   JSON_THROW_ON_ERROR 
 );
 
+// Flags for incoding JSON
 define("JSON_ENCODE_FLAGS", JSON_INVALID_UTF8_SUBSTITUTE
-|	JSON_NUMERIC_CHECK
-|	JSON_PRETTY_PRINT
-|	JSON_THROW_ON_ERROR
+|   JSON_NUMERIC_CHECK
+|   JSON_PRETTY_PRINT
+|   JSON_THROW_ON_ERROR
 );
 
-/*
-$json_decode_flags  = JSON_OBJECT_AS_ARRAY 
-|   JSON_BIGINT_AS_STRING
-|	JSON_NUMERIC_CHECK
-|   JSON_INVALID_UTF8_SUBSTITUTE
-|   JSON_THROW_ON_ERROR 
-;
+// Delimiter used in breadcrumb paths
+define( "BREADCRUMBDELIMITER", ':' );
 
-$json_encode_flags  = JSON_INVALID_UTF8_SUBSTITUTE
-|	JSON_NUMERIC_CHECK
-|	JSON_PRETTY_PRINT
-|	JSON_THROW_ON_ERROR
-;
-*/
+// Default database and table name
+if(!isset($tablename))
+{
+    $tablename  = 'jtable';
+}
+if(!isset($dbfile))
+{
+    $dbfile  = 'json.db';
+}
+
+
+//---------------------------------------------------------------------
+
+// SQL's for creating and testing table
+$jsondb_sql = 
+[
+    'create_table'  => 
+        "CREATE TABLE IF NOT EXISTS $tablename 
+        (
+            section     text,
+            language    text,
+            key         text NOT NULL,
+            value       text,
+            PRIMARY KEY ( section, language, key )
+        );",
+    'exists_table'  => "SELECT name FROM sqlite_master WHERE type='table' AND name='$tablename';"
+];
+
 
 /**
  *  @fn        putJsonDb
@@ -47,9 +64,9 @@ $json_encode_flags  = JSON_INVALID_UTF8_SUBSTITUTE
  *  
  *  @param [in] $db         Database handle
  *  @param [in] $tablename  Name of table
- *  @param [in] $struct 	List to store
- *  @param [in] $section 	Section
- *  @param [in] $language 	Language code
+ *  @param [in] $struct     List to store
+ *  @param [in] $section     Section
+ *  @param [in] $language     Language code
  *  @return    Return description
  *  
  *  @details   Convert a mixed data structure to a breadcrumb list
@@ -93,19 +110,17 @@ $json_encode_flags  = JSON_INVALID_UTF8_SUBSTITUTE
  *      ];
  *      putJsonDb( $db, "tablename", $mixed, "section", 'en' );
  *
- *  +---------+----------+-----------------------+--------------+
- *  +| section | language |          key          |    val      |
- *  ++---------+----------+-----------------------+-------------+
- *  +| section | en       | search-form-field     | Field       |
- *  +| section | en       | search-form-button    | Button      |
- *  +| section | en       | display-header-title  | Title       |
- *  +| section | en       | display-header-button | Button      |
- *  +| section | en       | display-main-title    | Main title  |
- *  +| section | en       | display-main-button   | Button      |
- *  +| section | en       | display-footer-send   | Footer      |
- *  +| section | en       | display-footer-cancel | Cancel      |
- *  +---------+----------+-----------------------+--------------+
- *      
+ *  | section | language |          key          |    val      |
+ *  |---------|----------|-----------------------|-------------|
+ *  | section | en       | search-form-field     | Field       |
+ *  | section | en       | search-form-button    | Button      |
+ *  | section | en       | display-header-title  | Title       |
+ *  | section | en       | display-header-button | Button      |
+ *  | section | en       | display-main-title    | Main title  |
+ *  | section | en       | display-main-button   | Button      |
+ *  | section | en       | display-footer-send   | Footer      |
+ *  | section | en       | display-footer-cancel | Cancel      |
+  *      
  *  @todo      
  *  @bug       
  *  @warning   
@@ -114,20 +129,20 @@ $json_encode_flags  = JSON_INVALID_UTF8_SUBSTITUTE
  *  @since     2022-06-09T08:57:21 / Erik Bachmann
  */
 function putJsonDb( &$db, $tablename, $struct, $section = '', $language = 'en' ) {
-	$output	= [];
-	$index = [];
+    $output    = [];
+    $index = [];
 
-	array2breadcrumblist($struct, $index, $output );
+    array2breadcrumblist($struct, $index, $output );
 
-	executeSql( $db, "BEGIN TRANSACTION;" );
-	foreach($index as $key => $value) {
+    executeSql( $db, "BEGIN TRANSACTION;" );
+    foreach($index as $key => $value) {
         $value  = SQLite3::escapeString( $value );
-		$sql	= "REPLACE INTO $tablename VALUES( '$section', '$language', '$key', '$value' );";
-		if( isset($debug) ) print "[$sql]\n";
-		executeSql( $db, $sql );
-	}
-	executeSql( $db, "END;" );
-	return( $index );
+        $sql    = "REPLACE INTO $tablename VALUES( '$section', '$language', '$key', '$value' );";
+        if( isset($debug) ) print "[$sql]\n";
+        executeSql( $db, $sql );
+    }
+    executeSql( $db, "END;" );
+    return( $index );
 }   //*** putJsonDb() ***
 
 //---------------------------------------------------------------------
@@ -152,12 +167,11 @@ function putJsonDb( &$db, $tablename, $struct, $section = '', $language = 'en' )
  *      ];
  *      putListDb( $db, "tablename", $list, "section" );
  *  
- *    +----------+----------+-----------------------+-----------+
  *    | section  | language |          key          |   value   |
- *    +----------+----------+-----------------------+-----------+
+ *    |----------|----------|-----------------------|-----------|
  *    | section  | xx       | test:str1             | 1         |
  *    | section  | xx       | test:str2             | 2         |
- *    +----------+----------+-----------------------+-----------+
+ *
  *  @todo      
  *  @bug       
  *  @warning   
@@ -196,7 +210,27 @@ function putListDb( &$db, $tablename, $struct, $section = '', $language = 'xx' )
  *      expand this to a valid mixed structure
  *  
  *  @example   
+ *
+ *    | section  | language |          key          |   value   |
+ *    |----------|----------|-----------------------|-----------|
+ *    | section  | xx       | test:str1             | 1         |
+ *    | section  | xx       | test:str2             | 2         |
  *  
+ *      $mix    = getJsonDb( $db, 'jtable', BREADCRUMBDELIMITER, "section = 'section' AND language = 'xx' ); 
+ *      print_r( $mix );
+ *  
+ *      Array
+ *      {
+ *          "test": [
+ *              {
+ *                  "str1": 1
+ *              },
+ *              {
+ *                  "str2": 4
+ *              }
+ *          ]
+ *      }
+ *
  *  @todo      
  *  @bug       
  *  @warning   
@@ -238,7 +272,17 @@ function getJsonDb( &$db, $tablename, $breadcrumbdelimiter = BREADCRUMBDELIMITER
  *  @details   More details
  *  
  *  @example   
- *  getListDb( $db, "tablename", "section like 'section'");
+ *    | section  | language |          key          |   value   |
+ *    |----------|----------|-----------------------|-----------|
+ *    | section  | xx       | test:str1             | 1         |
+ *    | section  | xx       | test:str2             | 2         |
+ *  
+ *      getListDb( $db, "tablename", "section like 'section'");
+ *  
+ *      (
+ *          [test:str1] => 1
+ *          [test:str2] => 2
+ *      )
  *  
  *  @todo      
  *  @bug       
@@ -248,17 +292,17 @@ function getJsonDb( &$db, $tablename, $breadcrumbdelimiter = BREADCRUMBDELIMITER
  *  @since     2022-06-09T08:58:47 / Erik Bachmann
  */
 function getListDb( &$db, $tablename, $where = "" ) {
-	$output	= [];
-	$where  = empty( $where ) ? $where : "WHERE " . $where;
-	$sql	= "SELECT * FROM $tablename $where;";
-	if( isset($debug) )trigger_error( "SQL: $sql", E_USER_NOTICE );
-	$data	= executeSql( $db, $sql );
+    $output = [];
+    $where  = empty( $where ) ? $where : "WHERE " . $where;
+    $sql    = "SELECT * FROM $tablename $where;";
+    if( isset($debug) )trigger_error( "SQL: $sql", E_USER_NOTICE );
+    $data   = executeSql( $db, $sql );
     
-	foreach( $data as $arrayno => $entry ) {
-		$entry['value']	= is_numeric( $entry['value'] ) ? (int) $entry['value'] : $entry['value'];
+    foreach( $data as $arrayno => $entry ) {
+        $entry['value']    = is_numeric( $entry['value'] ) ? (int) $entry['value'] : $entry['value'];
         $output[ $entry['key'] ] = $entry['value'];
-	}
-	return( $output );
+    }
+    return( $output );
 }   //*** getListDb() ***
 
 //---------------------------------------------------------------------
@@ -275,7 +319,18 @@ function getListDb( &$db, $tablename, $where = "" ) {
  *  @details   More details
  *  
  *  @example   
- *  
+ *          $list    =
+ *          [
+ *              "test:str1" => "1",
+ *              "test:str2" => "2"
+ *          ];
+ *          setBreadcrumpValue( $list, "test:str3", "Hello" );
+ *          $list    =
+ *          [
+ *              "test:str1" => "1",
+ *              "test:str2" => "2",
+ *              "test:str3" => "Hello"
+ *          ];
  *  @todo      
  *  @bug       
  *  @warning   
@@ -284,7 +339,6 @@ function getListDb( &$db, $tablename, $where = "" ) {
  *  @since     2022-11-24T15:38:32 / Erik Bachmann
  */
 function setBreadcrumpValue( &$output, $key, $value, $breadcrumbdelimiter = BREADCRUMBDELIMITER ) {
-    //global $breadcrumbdelimiter;
     $path = explode( $breadcrumbdelimiter, $key);
     setPathKey($path, $output, $value);
 }   // setBreadcrumpValue()
@@ -352,10 +406,10 @@ function array2breadcrumblist($a, &$index, $keys=array(), $breadcrumbdelimiter =
  *  @fn        setPathKey
  *  @brief     Set value for each breadcrumb
  *  
- *  @param [in] $path     Breadcrump trail
- *  @param [in] $array     Array to insert into
- *  @param [in] $value     Value to assign
- *  @return    Return description
+ *  @param [in] $path       Breadcrump trail
+ *  @param [in] $array      Array to insert into
+ *  @param [in] $value      Value to assign
+ *  @return    VOID
  *  
  *  @details   More details
  *      This combination will set a value in an existing array or create the array 
